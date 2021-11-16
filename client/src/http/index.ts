@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { AuthResponse } from '../models/response/AuthResponse';
 
 export const API_URL = `http://192.168.0.228:1337/api` 
 
@@ -9,8 +10,26 @@ const $api = axios.create({
 
 $api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${localStorage.getItem('token')}`
-    console.log('config' + config);
     return config;
 })
+
+$api.interceptors.response.use((config) => {
+    return config;
+},async (error) => {
+    const originalRequest = error.config;
+    if(error.response.statatus == 401 && error.config && !error.config._isRetry){
+        originalRequest._isRetry = true;
+        try {
+            const response = await axios.get<AuthResponse>(`${API_URL}/refresh`, {withCredentials: true});
+            localStorage.setItem('token', response.data.accessToken);
+            return $api.request(originalRequest);
+        } catch (e) {
+            console.log('Not Authorized');
+        }
+    }
+    throw error;
+})
+
+
 
 export default $api;

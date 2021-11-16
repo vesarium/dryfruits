@@ -33,6 +33,7 @@ class UserService{
     }
     
     async activate(activationLink){
+        
         const user = await UserModel.findOne( {activationLink})
         if (!user){
             throw ApiError.BadReques('Activation link is incorrect')
